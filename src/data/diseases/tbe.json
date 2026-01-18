@@ -1,0 +1,32 @@
+{
+  "id": "tbe",
+  "category": { "lv": "Transmisīvās", "en": "Vector-borne" },
+  "title": { "lv": "Ērču encefalīts (TBE)", "en": "Tick-borne Encephalitis (TBE)" },
+  "color": "bg-green-100 border-green-300",
+  "symptoms": {
+    "lv": ["Drudzis", "Galvassāpes", "Vemšana", "Ērce"],
+    "en": ["Fever", "Headache", "Vomiting", "Tick bite"]
+  },
+  "redFlags": {
+    "lv": "Divfāzu gaita. Pēc \"izveseļošanās\" (8 dienas) -> Straujš T kāpums + Meningeālie simptomi.",
+    "en": "Biphasic course. After \"recovery\" (8 days) -> Sudden fever spike + Meningeal signs."
+  },
+  "diagnostics": {
+    "lv": ["Asinis/Likvors: IgM pret TBE"],
+    "en": ["Blood/CSF: IgM anti-TBE"]
+  },
+  "treatment": {
+    "lv": ["Specifiskas NAV", "Deksametazons"],
+    "en": ["No specific treatment", "Dexamethasone"]
+  },
+  "details": {
+    "etiology": { "lv": "Flavivirus. Pārnesēji: ērces (Ixodes).", "en": "Flavivirus. Vectors: ticks (Ixodes)." },
+    "pathogenesis": { "lv": "Vīruss asinīs -> GHE barjera -> CNS.", "en": "Viremia -> Blood-brain barrier -> CNS." },
+    "clinical": { "lv": "1. fāze: Gripai līdzīga. 2. fāze: Meningīts/Encefalīts.", "en": "Phase 1: Flu-like. Phase 2: Meningitis/Encephalitis." },
+    "diagnostics_full": { "lv": "IFA IgM/IgG. PĶR tikai 1. fāzē.", "en": "ELISA IgM/IgG. PCR only in 1st phase." },
+    "treatment_full": { "lv": "Gultas režīms. Mannitols, Deksametazons.", "en": "Bed rest. Mannitol, Dexamethasone." },
+    "hospitalization": { "lv": "Stacionēt visus ar 2. fāzes simptomiem.", "en": "Hospitalize all with phase 2 symptoms." },
+    "risk_groups": { "lv": "Mežsargi, sēņotāji.", "en": "Foresters, mushroom pickers." },
+    "recommendations": { "lv": "Vakcinācija (TicoVac).", "en": "Vaccination (TicoVac)." }
+  }
+}

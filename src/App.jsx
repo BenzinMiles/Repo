@@ -2,44 +2,16 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Search, Activity, AlertTriangle, Stethoscope, Pill, X, Info,
   AlertOctagon, Bug, Bed, Users, ClipboardList, Globe, Trash2,
-  Upload, Plus, Save, Download
+  Upload, Plus, Save, Download, GraduationCap, ArrowRight, CheckCircle, XCircle
 } from 'lucide-react';
 
-// --- НАЧАЛЬНЫЕ ДАННЫЕ (ШАБЛОН) ---
-const initialData = [
-  {
-    id: 'tbe',
-    category: { lv: 'Transmisīvās', en: 'Vector-borne' },
-    title: { lv: 'Ērču encefalīts (TBE)', en: 'Tick-borne Encephalitis (TBE)' },
-    color: 'bg-green-100 border-green-300',
-    symptoms: {
-      lv: ['Drudzis', 'Galvassāpes', 'Vemšana', 'Ērce'],
-      en: ['Fever', 'Headache', 'Vomiting', 'Tick bite']
-    },
-    redFlags: {
-      lv: 'Divfāzu gaita. Pēc "izveseļošanās" (8 dienas) -> Straujš T kāpums + Meningeālie simptomi.',
-      en: 'Biphasic course. After "recovery" (8 days) -> Sudden fever spike + Meningeal signs.'
-    },
-    diagnostics: {
-      lv: ['Asinis/Likvors: IgM pret TBE'],
-      en: ['Blood/CSF: IgM anti-TBE']
-    },
-    treatment: {
-      lv: ['Specifiskas NAV', 'Deksametazons'],
-      en: ['No specific treatment', 'Dexamethasone']
-    },
-    details: {
-      etiology: { lv: 'Flavivirus. Pārnesēji: ērces (Ixodes).', en: 'Flavivirus. Vectors: ticks (Ixodes).' },
-      pathogenesis: { lv: 'Vīruss asinīs -> GHE barjera -> CNS.', en: 'Viremia -> Blood-brain barrier -> CNS.' },
-      clinical: { lv: '1. fāze: Gripai līdzīga. 2. fāze: Meningīts/Encefalīts.', en: 'Phase 1: Flu-like. Phase 2: Meningitis/Encephalitis.' },
-      diagnostics_full: { lv: 'IFA IgM/IgG. PĶR tikai 1. fāzē.', en: 'ELISA IgM/IgG. PCR only in 1st phase.' },
-      treatment_full: { lv: 'Gultas režīms. Mannitols, Deksametazons.', en: 'Bed rest. Mannitol, Dexamethasone.' },
-      hospitalization: { lv: 'Stacionēt visus ar 2. fāzes simptomiem.', en: 'Hospitalize all with phase 2 symptoms.' },
-      risk_groups: { lv: 'Mežsargi, sēņotāji.', en: 'Foresters, mushroom pickers.' },
-      recommendations: { lv: 'Vakcinācija (TicoVac).', en: 'Vaccination (TicoVac).' }
-    }
-  }
-];
+// Load diseases from JSON files
+const diseaseModules = import.meta.glob('./data/diseases/*.json', { eager: true });
+const initialData = Object.values(diseaseModules).map(module => module.default || module);
+
+// Load tests from JSON files
+const testModules = import.meta.glob('./data/tests/*.json', { eager: true });
+const initialTests = Object.values(testModules).flatMap(module => module.default || module);
 
 // --- TEKSTI SASKARNEI ---
 const uiText = {
@@ -66,7 +38,16 @@ const uiText = {
     json_error: 'Kļūda JSON formātā!',
     add_success: 'Veiksmīgi pievienots!',
     confirm_delete: 'Dzēst ierakstu?',
-    reset_db: 'Atiestatīt bāzi'
+    reset_db: 'Atiestatīt bāzi',
+    start_test: 'Sākt Testu',
+    test_title: 'Zināšanu pārbaude',
+    next_question: 'Nākamais jautājums',
+    correct: 'Pareizi!',
+    incorrect: 'Nepareizi',
+    explanation: 'Paskaidrojums',
+    finish_test: 'Pabeigt testu',
+    your_score: 'Tavs rezultāts',
+    from: 'no'
   },
   en: {
     title: 'Infecto-Shell',
@@ -91,7 +72,16 @@ const uiText = {
     json_error: 'Invalid JSON format!',
     add_success: 'Successfully added!',
     confirm_delete: 'Delete entry?',
-    reset_db: 'Reset DB'
+    reset_db: 'Reset DB',
+    start_test: 'Start Test',
+    test_title: 'Knowledge Test',
+    next_question: 'Next Question',
+    correct: 'Correct!',
+    incorrect: 'Incorrect',
+    explanation: 'Explanation',
+    finish_test: 'Finish Test',
+    your_score: 'Your Score',
+    from: 'of'
   }
 };
 
@@ -118,19 +108,41 @@ export default function InfectoApp() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [jsonInput, setJsonInput] = useState('');
 
-  // Load local storage
+  // Test State
+  const [isTestOpen, setIsTestOpen] = useState(false);
+  const [testQuestions, setTestQuestions] = useState([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [isAnswered, setIsAnswered] = useState(false);
+
+  // Load local storage and merge with file data
   useEffect(() => {
     try {
       const saved = localStorage.getItem('infecto_diseases');
-      if (saved) setDiseases(JSON.parse(saved));
+      if (saved) {
+        const localDiseases = JSON.parse(saved);
+        // Merge strategy: Local overrides file if same ID (optional), or just append
+        // Here we just use unique IDs.
+        const fileIds = new Set(initialData.map(d => d.id));
+        const uniqueLocal = localDiseases.filter(d => !fileIds.has(d.id));
+        setDiseases([...initialData, ...uniqueLocal]);
+      } else {
+        setDiseases(initialData);
+      }
     } catch (e) {
       console.error("Storage load error", e);
     }
   }, []);
 
-  // Save local storage
+  // Save local storage (only new/imported ones ideally, but here saving all state for simplicity or just user added ones)
+  // To avoid duplicating file-based data in LS, we could only save those that are NOT in initialData
+  // But for this simple app, we can just save the full state or filter.
+  // Let's only save user added diseases to avoid bloat, but simpler to save all.
   useEffect(() => {
-    localStorage.setItem('infecto_diseases', JSON.stringify(diseases));
+    const fileIds = new Set(initialData.map(d => d.id));
+    const toSave = diseases.filter(d => !fileIds.has(d.id)); // Only save user added
+    localStorage.setItem('infecto_diseases', JSON.stringify(toSave));
   }, [diseases]);
 
   // Helpers
@@ -173,6 +185,12 @@ export default function InfectoApp() {
   };
 
   const handleDelete = (id) => {
+    // Prevent deleting file-based diseases
+    if (initialData.find(d => d.id === id)) {
+      alert("Cannot delete built-in data.");
+      return;
+    }
+
     if (window.confirm(t('confirm_delete'))) {
       setDiseases(prev => prev.filter(d => d.id !== id));
       setSelectedDisease(null);
@@ -183,6 +201,40 @@ export default function InfectoApp() {
     if (window.confirm("Reset?")) {
       setDiseases(initialData);
       localStorage.removeItem('infecto_diseases');
+    }
+  };
+
+  // --- TEST LOGIC ---
+  const startTest = () => {
+    // Shuffle questions
+    const shuffled = [...initialTests].sort(() => 0.5 - Math.random());
+    setTestQuestions(shuffled);
+    setCurrentQuestionIndex(0);
+    setScore(0);
+    setIsAnswered(false);
+    setSelectedAnswer(null);
+    setIsTestOpen(true);
+  };
+
+  const handleAnswer = (option) => {
+    if (isAnswered) return;
+    setSelectedAnswer(option);
+    setIsAnswered(true);
+    const correct = testQuestions[currentQuestionIndex][5];
+    if (option === correct) {
+      setScore(s => s + 1);
+    }
+  };
+
+  const nextQuestion = () => {
+    if (currentQuestionIndex < testQuestions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+      setIsAnswered(false);
+      setSelectedAnswer(null);
+    } else {
+      // End of test
+      alert(`${t('your_score')}: ${score} ${t('from')} ${testQuestions.length}`);
+      setIsTestOpen(false);
     }
   };
 
@@ -200,13 +252,21 @@ export default function InfectoApp() {
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-center">
             <button
               onClick={() => setLang(l => l === 'lv' ? 'en' : 'lv')}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg font-medium hover:bg-indigo-100"
             >
               <Globe className="w-4 h-4" /> {lang.toUpperCase()}
             </button>
+
+            <button
+              onClick={startTest}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium hover:bg-blue-100"
+            >
+              <GraduationCap className="w-4 h-4" /> {t('start_test')}
+            </button>
+
             <button
               onClick={() => setIsImportOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg font-medium hover:bg-green-100"
@@ -349,6 +409,73 @@ export default function InfectoApp() {
                     </Section>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: TEST */}
+        {isTestOpen && testQuestions.length > 0 && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl w-full max-w-2xl p-6 shadow-2xl relative">
+              <button onClick={() => setIsTestOpen(false)} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600">
+                <X className="w-6 h-6" />
+              </button>
+
+              <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                <GraduationCap className="w-6 h-6 text-blue-600" /> {t('test_title')}
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                {t('your_score')}: {score} / {testQuestions.length}
+              </p>
+
+              <div className="mb-6">
+                 <h4 className="text-lg font-bold text-gray-800 mb-4">
+                   {currentQuestionIndex + 1}. {testQuestions[currentQuestionIndex][0]}
+                 </h4>
+
+                 <div className="grid grid-cols-1 gap-3">
+                   {testQuestions[currentQuestionIndex].slice(1, 5).map((option, idx) => {
+                      let btnClass = "p-3 rounded-lg border text-left transition-colors hover:bg-gray-50";
+                      const correct = testQuestions[currentQuestionIndex][5];
+
+                      if (isAnswered) {
+                        if (option === correct) btnClass = "p-3 rounded-lg border border-green-500 bg-green-50 text-green-900";
+                        else if (option === selectedAnswer) btnClass = "p-3 rounded-lg border border-red-500 bg-red-50 text-red-900";
+                        else btnClass = "p-3 rounded-lg border opacity-50";
+                      }
+
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => handleAnswer(option)}
+                          disabled={isAnswered}
+                          className={btnClass}
+                        >
+                          <span className="font-bold mr-2">{['A', 'B', 'C', 'D'][idx]}.</span> {option}
+                        </button>
+                      )
+                   })}
+                 </div>
+              </div>
+
+              {isAnswered && (
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-4">
+                  <h5 className="font-bold text-blue-800 flex items-center gap-2 mb-1">
+                    <Info className="w-4 h-4" /> {t('explanation')}
+                  </h5>
+                  <p className="text-blue-900 text-sm">
+                    {testQuestions[currentQuestionIndex][6]}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex justify-end mt-4">
+                {isAnswered && (
+                  <button onClick={nextQuestion} className="px-6 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg flex items-center gap-2">
+                    {t('next_question')} <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
