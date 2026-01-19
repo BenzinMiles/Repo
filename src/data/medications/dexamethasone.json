@@ -1,0 +1,17 @@
+{
+  "id": "dexamethasone",
+  "title": { "lv": "Deksametazons", "en": "Dexamethasone" },
+  "group": { "lv": "Glikokortikoīdi", "en": "Glucocorticoids" },
+  "adult_dosage": {
+    "lv": "4-8 mg i/v vai i/m (max 16 mg/dienā)",
+    "en": "4-8 mg IV or IM (max 16 mg/day)"
+  },
+  "pediatric_dosage": {
+    "lv": "0.15 - 0.6 mg/kg/dienā (sadalot 2-4 devās)",
+    "en": "0.15 - 0.6 mg/kg/day (divided in 2-4 doses)"
+  },
+  "contraindications": {
+    "lv": "Sistēmiska sēnīšu infekcija, paaugstināta jutība.",
+    "en": "Systemic fungal infection, hypersensitivity."
+  }
+}

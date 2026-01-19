@@ -1,16 +1,115 @@
-# React + Vite
+# Infecto-Shell
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A hybrid mobile application (Android APK) built with React + Vite + Tailwind CSS and wrapped in Capacitor. Designed as an interactive reference guide for infectious disease specialists.
 
-Currently, two official plugins are available:
+## 🚀 Project Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+1.  **Install Dependencies**
+    ```bash
+    npm install
+    ```
 
-## React Compiler
+2.  **Run Development Server**
+    ```bash
+    npm run dev
+    ```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+3.  **Build for Android**
+    ```bash
+    npm run build
+    npx cap sync
+    npx cap open android
+    ```
+    *Note: Opening the Android project requires Android Studio to be installed.*
 
-## Expanding the ESLint configuration
+## 📂 Data Management
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+The application loads data from JSON files located in the `src/data/` directory. You can add new content by creating new JSON files in the respective subfolders.
+
+### 1. Diseases (`src/data/diseases/`)
+Create a new file, e.g., `src/data/diseases/covid19.json`.
+
+**Template:**
+```json
+{
+  "id": "unique_id_slug",
+  "category": { "lv": "Category LV", "en": "Category EN" },
+  "title": { "lv": "Title LV", "en": "Title EN" },
+  "color": "bg-blue-100 border-blue-300",
+  "symptoms": {
+    "lv": ["Symptom 1", "Symptom 2"],
+    "en": ["Symptom 1", "Symptom 2"]
+  },
+  "redFlags": {
+    "lv": "Red flags description...",
+    "en": "Red flags description..."
+  },
+  "diagnostics": {
+    "lv": ["Brief diagnostic info"],
+    "en": ["Brief diagnostic info"]
+  },
+  "treatment": {
+    "lv": ["Brief treatment info"],
+    "en": ["Brief treatment info"]
+  },
+  "details": {
+    "etiology": { "lv": "...", "en": "..." },
+    "pathogenesis": { "lv": "...", "en": "..." },
+    "clinical": { "lv": "...", "en": "..." },
+    "diagnostics_full": { "lv": "...", "en": "..." },
+    "treatment_full": { "lv": "...", "en": "..." },
+    "hospitalization": { "lv": "...", "en": "..." },
+    "risk_groups": { "lv": "...", "en": "..." },
+    "recommendations": { "lv": "...", "en": "..." }
+  }
+}
+```
+
+### 2. Medications (`src/data/medications/`)
+Create a new file, e.g., `src/data/medications/paracetamol.json`.
+
+**Template:**
+```json
+{
+  "id": "paracetamol",
+  "title": { "lv": "Paracetamols", "en": "Paracetamol" },
+  "group": { "lv": "Analgetics", "en": "Analgetics" },
+  "adult_dosage": {
+    "lv": "500-1000 mg every 4-6h",
+    "en": "500-1000 mg every 4-6h"
+  },
+  "pediatric_dosage": {
+    "lv": "10-15 mg/kg every 4-6h",
+    "en": "10-15 mg/kg every 4-6h"
+  },
+  "contraindications": {
+    "lv": "Severe liver failure.",
+    "en": "Severe liver failure."
+  }
+}
+```
+
+### 3. Tests / Quizzes (`src/data/tests/`)
+Create a new file, e.g., `src/data/tests/quiz_1.json`. The file should contain an array of question arrays.
+
+**Template:**
+```json
+[
+  [
+    "Question Text?",
+    "Option A",
+    "Option B",
+    "Option C",
+    "Option D",
+    "Correct Option Text (must match exactly)",
+    "Explanation text displayed after answering."
+  ]
+]
+```
+
+## ⚠️ Building & Bundling
+If you encounter "No modules supporting bundles found" in Android Studio:
+1. Ensure you have run `npm run build` at least once.
+2. Ensure `dist/` directory exists.
+3. Run `npx cap sync`.
+4. Check your Run Configuration in Android Studio (Select 'app').

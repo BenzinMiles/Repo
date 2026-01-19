@@ -13,6 +13,10 @@ const initialData = Object.values(diseaseModules).map(module => module.default |
 const testModules = import.meta.glob('./data/tests/*.json', { eager: true });
 const initialTests = Object.values(testModules).flatMap(module => module.default || module);
 
+// Load medications from JSON files
+const medicationModules = import.meta.glob('./data/medications/*.json', { eager: true });
+const initialMedications = Object.values(medicationModules).map(module => module.default || module);
+
 // --- TEKSTI SASKARNEI ---
 const uiText = {
   lv: {
@@ -47,7 +51,13 @@ const uiText = {
     explanation: 'Paskaidrojums',
     finish_test: 'Pabeigt testu',
     your_score: 'Tavs rezultāts',
-    from: 'no'
+    from: 'no',
+    medications: 'Medikamenti',
+    medications_title: 'Medikamentu rokasgrāmata',
+    adult_dosage: 'Devas pieaugušajiem',
+    pediatric_dosage: 'Devas bērniem',
+    contraindications: 'Kontrindikācijas',
+    search_meds: 'Meklēt zāles...'
   },
   en: {
     title: 'Infecto-Shell',
@@ -81,7 +91,13 @@ const uiText = {
     explanation: 'Explanation',
     finish_test: 'Finish Test',
     your_score: 'Your Score',
-    from: 'of'
+    from: 'of',
+    medications: 'Medications',
+    medications_title: 'Medication Guide',
+    adult_dosage: 'Adult Dosage',
+    pediatric_dosage: 'Pediatric Dosage',
+    contraindications: 'Contraindications',
+    search_meds: 'Search meds...'
   }
 };
 
@@ -116,14 +132,17 @@ export default function InfectoApp() {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [isAnswered, setIsAnswered] = useState(false);
 
+  // Medications State
+  const [isMedsOpen, setIsMedsOpen] = useState(false);
+  const [medsSearch, setMedsSearch] = useState('');
+  const [selectedMed, setSelectedMed] = useState(null);
+
   // Load local storage and merge with file data
   useEffect(() => {
     try {
       const saved = localStorage.getItem('infecto_diseases');
       if (saved) {
         const localDiseases = JSON.parse(saved);
-        // Merge strategy: Local overrides file if same ID (optional), or just append
-        // Here we just use unique IDs.
         const fileIds = new Set(initialData.map(d => d.id));
         const uniqueLocal = localDiseases.filter(d => !fileIds.has(d.id));
         setDiseases([...initialData, ...uniqueLocal]);
@@ -135,13 +154,10 @@ export default function InfectoApp() {
     }
   }, []);
 
-  // Save local storage (only new/imported ones ideally, but here saving all state for simplicity or just user added ones)
-  // To avoid duplicating file-based data in LS, we could only save those that are NOT in initialData
-  // But for this simple app, we can just save the full state or filter.
-  // Let's only save user added diseases to avoid bloat, but simpler to save all.
+  // Save local storage
   useEffect(() => {
     const fileIds = new Set(initialData.map(d => d.id));
-    const toSave = diseases.filter(d => !fileIds.has(d.id)); // Only save user added
+    const toSave = diseases.filter(d => !fileIds.has(d.id));
     localStorage.setItem('infecto_diseases', JSON.stringify(toSave));
   }, [diseases]);
 
@@ -150,7 +166,7 @@ export default function InfectoApp() {
   const getVal = (obj) => (obj && (obj[lang] || obj['en'])) || '';
   const getArr = (obj) => (obj && (obj[lang] || obj['en'])) || [];
 
-  // Filter
+  // Filter Diseases
   const filteredDiseases = useMemo(() => {
     const lowerSearch = searchTerm.toLowerCase();
     return diseases.filter(d => {
@@ -159,6 +175,16 @@ export default function InfectoApp() {
       return title.includes(lowerSearch) || redFlags.includes(lowerSearch);
     });
   }, [diseases, searchTerm, lang]);
+
+  // Filter Medications
+  const filteredMeds = useMemo(() => {
+    const lowerSearch = medsSearch.toLowerCase();
+    return initialMedications.filter(m => {
+       const title = getVal(m.title).toLowerCase();
+       const group = getVal(m.group).toLowerCase();
+       return title.includes(lowerSearch) || group.includes(lowerSearch);
+    });
+  }, [medsSearch, lang]);
 
   // Actions
   const handleImport = () => {
@@ -185,7 +211,6 @@ export default function InfectoApp() {
   };
 
   const handleDelete = (id) => {
-    // Prevent deleting file-based diseases
     if (initialData.find(d => d.id === id)) {
       alert("Cannot delete built-in data.");
       return;
@@ -206,7 +231,6 @@ export default function InfectoApp() {
 
   // --- TEST LOGIC ---
   const startTest = () => {
-    // Shuffle questions
     const shuffled = [...initialTests].sort(() => 0.5 - Math.random());
     setTestQuestions(shuffled);
     setCurrentQuestionIndex(0);
@@ -232,7 +256,6 @@ export default function InfectoApp() {
       setIsAnswered(false);
       setSelectedAnswer(null);
     } else {
-      // End of test
       alert(`${t('your_score')}: ${score} ${t('from')} ${testQuestions.length}`);
       setIsTestOpen(false);
     }
@@ -265,6 +288,13 @@ export default function InfectoApp() {
               className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium hover:bg-blue-100"
             >
               <GraduationCap className="w-4 h-4" /> {t('start_test')}
+            </button>
+
+            <button
+              onClick={() => setIsMedsOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg font-medium hover:bg-purple-100"
+            >
+              <Pill className="w-4 h-4" /> {t('medications')}
             </button>
 
             <button
@@ -477,6 +507,78 @@ export default function InfectoApp() {
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: MEDICATIONS */}
+        {isMedsOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl w-full max-w-4xl p-6 shadow-2xl relative h-[90vh] flex flex-col">
+              <button onClick={() => { setIsMedsOpen(false); setSelectedMed(null); }} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600">
+                <X className="w-6 h-6" />
+              </button>
+
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-purple-700">
+                <Pill className="w-6 h-6" /> {t('medications_title')}
+              </h3>
+
+              {selectedMed ? (
+                <div className="flex-1 overflow-y-auto">
+                  <button onClick={() => setSelectedMed(null)} className="text-sm text-gray-500 mb-4 hover:underline">&larr; Back</button>
+                  <h2 className="text-2xl font-bold mb-1">{getVal(selectedMed.title)}</h2>
+                  <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded mb-6 font-bold uppercase">{getVal(selectedMed.group)}</span>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                      <h4 className="flex items-center gap-2 font-bold text-blue-800 mb-2">
+                        <Users className="w-4 h-4" /> {t('adult_dosage')}
+                      </h4>
+                      <p className="text-gray-800">{getVal(selectedMed.adult_dosage)}</p>
+                    </div>
+
+                    <div className="bg-pink-50 p-4 rounded-xl border border-pink-100">
+                      <h4 className="flex items-center gap-2 font-bold text-pink-800 mb-2">
+                        <Bug className="w-4 h-4" /> {t('pediatric_dosage')}
+                      </h4>
+                      <p className="text-gray-800">{getVal(selectedMed.pediatric_dosage)}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 bg-red-50 p-4 rounded-xl border border-red-100">
+                     <h4 className="flex items-center gap-2 font-bold text-red-800 mb-2">
+                        <AlertTriangle className="w-4 h-4" /> {t('contraindications')}
+                      </h4>
+                      <p className="text-gray-800">{getVal(selectedMed.contraindications)}</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    placeholder={t('search_meds')}
+                    className="w-full p-3 border rounded-lg mb-4 focus:ring-2 focus:ring-purple-500 outline-none"
+                    value={medsSearch}
+                    onChange={e => setMedsSearch(e.target.value)}
+                  />
+
+                  <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {filteredMeds.map((med) => (
+                      <div
+                        key={med.id}
+                        onClick={() => setSelectedMed(med)}
+                        className="p-4 border rounded-xl hover:bg-purple-50 cursor-pointer transition-colors flex justify-between items-center"
+                      >
+                         <div>
+                           <h4 className="font-bold text-gray-800">{getVal(med.title)}</h4>
+                           <p className="text-xs text-gray-500">{getVal(med.group)}</p>
+                         </div>
+                         <ArrowRight className="w-4 h-4 text-purple-300" />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
