@@ -1,0 +1,16 @@
+{
+  "id": "guide_sepsis_2025",
+  "type": "guideline",
+  "title": { "lv": "Sepses vadlīnijas (2025)", "en": "Sepsis Guidelines (2025)" },
+  "category": { "lv": "Neatliekamā", "en": "Emergency" },
+  "summary": {
+    "lv": "Ātrais algoritms sepses atpazīšanai un antibakteriālās terapijas uzsākšanai.",
+    "en": "Rapid algorithm for sepsis recognition and initiation of antibiotic therapy."
+  },
+  "content": {
+    "lv": "1. Sākotnējā novērtēšana (qSOFA)...\n2. Asins kultūras paņemšana...\n3. Empīriskā terapija: ...",
+    "en": "1. Initial assessment (qSOFA)...\n2. Blood culture collection...\n3. Empirical therapy: ..."
+  },
+  "source": "SPKC / CDC",
+  "pdfUrl": "https://example.com/guideline.pdf"
+}

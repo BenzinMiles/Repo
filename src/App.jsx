@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Search, Activity, AlertTriangle, Stethoscope, Pill, X, Info,
   AlertOctagon, Bug, Bed, Users, ClipboardList, Globe, Trash2,
-  Upload, Plus, Save, Download, GraduationCap, ArrowRight, CheckCircle, XCircle
+  Upload, Plus, Save, Download, GraduationCap, ArrowRight, CheckCircle, XCircle, FileText, BookOpen
 } from 'lucide-react';
 
 // Load diseases from JSON files
@@ -16,6 +16,10 @@ const initialTests = Object.values(testModules).flatMap(module => module.default
 // Load medications from JSON files
 const medicationModules = import.meta.glob('./data/medications/*.json', { eager: true });
 const initialMedications = Object.values(medicationModules).map(module => module.default || module);
+
+// Load guidelines from JSON files
+const guidelineModules = import.meta.glob('./data/guidelines/*.json', { eager: true });
+const initialGuidelines = Object.values(guidelineModules).map(module => module.default || module);
 
 // --- TEKSTI SASKARNEI ---
 const uiText = {
@@ -57,7 +61,11 @@ const uiText = {
     adult_dosage: 'Devas pieaugušajiem',
     pediatric_dosage: 'Devas bērniem',
     contraindications: 'Kontrindikācijas',
-    search_meds: 'Meklēt zāles...'
+    search_meds: 'Meklēt zāles...',
+    tab_diseases: 'Slimības',
+    tab_guidelines: 'Vadlīnijas',
+    open_pdf: 'Atvērt PDF',
+    source: 'Avots'
   },
   en: {
     title: 'Infecto-Shell',
@@ -97,7 +105,11 @@ const uiText = {
     adult_dosage: 'Adult Dosage',
     pediatric_dosage: 'Pediatric Dosage',
     contraindications: 'Contraindications',
-    search_meds: 'Search meds...'
+    search_meds: 'Search meds...',
+    tab_diseases: 'Diseases',
+    tab_guidelines: 'Guidelines',
+    open_pdf: 'Open PDF',
+    source: 'Source'
   }
 };
 
@@ -119,8 +131,13 @@ const Section = ({ title, icon: Icon, children }) => {
 export default function InfectoApp() {
   const [lang, setLang] = useState('lv');
   const [diseases, setDiseases] = useState(initialData);
+  const [guidelines, setGuidelines] = useState(initialGuidelines);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('diseases'); // 'diseases' or 'guidelines'
+
   const [selectedDisease, setSelectedDisease] = useState(null);
+  const [selectedGuideline, setSelectedGuideline] = useState(null);
+
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [jsonInput, setJsonInput] = useState('');
 
@@ -140,15 +157,26 @@ export default function InfectoApp() {
   // Load local storage and merge with file data
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('infecto_diseases');
-      if (saved) {
-        const localDiseases = JSON.parse(saved);
+      const savedDiseases = localStorage.getItem('infecto_diseases');
+      if (savedDiseases) {
+        const localDiseases = JSON.parse(savedDiseases);
         const fileIds = new Set(initialData.map(d => d.id));
         const uniqueLocal = localDiseases.filter(d => !fileIds.has(d.id));
         setDiseases([...initialData, ...uniqueLocal]);
       } else {
         setDiseases(initialData);
       }
+
+      const savedGuidelines = localStorage.getItem('infecto_guidelines');
+      if (savedGuidelines) {
+        const localGuidelines = JSON.parse(savedGuidelines);
+        const fileIds = new Set(initialGuidelines.map(g => g.id));
+        const uniqueLocal = localGuidelines.filter(g => !fileIds.has(g.id));
+        setGuidelines([...initialGuidelines, ...uniqueLocal]);
+      } else {
+        setGuidelines(initialGuidelines);
+      }
+
     } catch (e) {
       console.error("Storage load error", e);
     }
@@ -160,6 +188,12 @@ export default function InfectoApp() {
     const toSave = diseases.filter(d => !fileIds.has(d.id));
     localStorage.setItem('infecto_diseases', JSON.stringify(toSave));
   }, [diseases]);
+
+  useEffect(() => {
+    const fileIds = new Set(initialGuidelines.map(g => g.id));
+    const toSave = guidelines.filter(g => !fileIds.has(g.id));
+    localStorage.setItem('infecto_guidelines', JSON.stringify(toSave));
+  }, [guidelines]);
 
   // Helpers
   const t = (key) => uiText[lang][key] || key;
@@ -176,6 +210,16 @@ export default function InfectoApp() {
     });
   }, [diseases, searchTerm, lang]);
 
+  // Filter Guidelines
+  const filteredGuidelines = useMemo(() => {
+    const lowerSearch = searchTerm.toLowerCase();
+    return guidelines.filter(g => {
+      const title = getVal(g.title).toLowerCase();
+      const summary = getVal(g.summary).toLowerCase();
+      return title.includes(lowerSearch) || summary.includes(lowerSearch);
+    });
+  }, [guidelines, searchTerm, lang]);
+
   // Filter Medications
   const filteredMeds = useMemo(() => {
     const lowerSearch = medsSearch.toLowerCase();
@@ -190,17 +234,32 @@ export default function InfectoApp() {
   const handleImport = () => {
     try {
       const newEntry = JSON.parse(jsonInput);
-      if (!newEntry.id || !newEntry.title) throw new Error("Missing ID or Title");
+      if (!newEntry.id) throw new Error("Missing ID");
 
-      setDiseases(prev => {
-        const existingIdx = prev.findIndex(d => d.id === newEntry.id);
-        if (existingIdx >= 0) {
-          const updated = [...prev];
-          updated[existingIdx] = newEntry;
-          return updated;
-        }
-        return [...prev, newEntry];
-      });
+      if (newEntry.type === 'guideline') {
+        // Import Guideline
+        setGuidelines(prev => {
+            const existingIdx = prev.findIndex(g => g.id === newEntry.id);
+            if (existingIdx >= 0) {
+              const updated = [...prev];
+              updated[existingIdx] = newEntry;
+              return updated;
+            }
+            return [...prev, newEntry];
+          });
+      } else {
+        // Import Disease (default)
+        if (!newEntry.title) throw new Error("Missing Title");
+        setDiseases(prev => {
+            const existingIdx = prev.findIndex(d => d.id === newEntry.id);
+            if (existingIdx >= 0) {
+              const updated = [...prev];
+              updated[existingIdx] = newEntry;
+              return updated;
+            }
+            return [...prev, newEntry];
+          });
+      }
 
       setJsonInput('');
       setIsImportOpen(false);
@@ -210,22 +269,34 @@ export default function InfectoApp() {
     }
   };
 
-  const handleDelete = (id) => {
-    if (initialData.find(d => d.id === id)) {
-      alert("Cannot delete built-in data.");
-      return;
-    }
-
-    if (window.confirm(t('confirm_delete'))) {
-      setDiseases(prev => prev.filter(d => d.id !== id));
-      setSelectedDisease(null);
+  const handleDelete = (id, type = 'disease') => {
+    if (type === 'guideline') {
+        if (initialGuidelines.find(g => g.id === id)) {
+            alert("Cannot delete built-in data.");
+            return;
+        }
+        if (window.confirm(t('confirm_delete'))) {
+            setGuidelines(prev => prev.filter(g => g.id !== id));
+            setSelectedGuideline(null);
+        }
+    } else {
+        if (initialData.find(d => d.id === id)) {
+            alert("Cannot delete built-in data.");
+            return;
+        }
+        if (window.confirm(t('confirm_delete'))) {
+            setDiseases(prev => prev.filter(d => d.id !== id));
+            setSelectedDisease(null);
+        }
     }
   };
 
   const handleReset = () => {
     if (window.confirm("Reset?")) {
       setDiseases(initialData);
+      setGuidelines(initialGuidelines);
       localStorage.removeItem('infecto_diseases');
+      localStorage.removeItem('infecto_guidelines');
     }
   };
 
@@ -309,8 +380,23 @@ export default function InfectoApp() {
           </div>
         </div>
 
-        {/* SEARCH */}
+        {/* SEARCH & TABS */}
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 sticky top-2 z-10">
+          <div className="flex gap-4 mb-4 border-b border-gray-100">
+             <button
+               onClick={() => setActiveTab('diseases')}
+               className={`pb-2 px-1 font-bold ${activeTab === 'diseases' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-400'}`}
+             >
+                {t('tab_diseases')}
+             </button>
+             <button
+               onClick={() => setActiveTab('guidelines')}
+               className={`pb-2 px-1 font-bold ${activeTab === 'guidelines' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-400'}`}
+             >
+                {t('tab_guidelines')}
+             </button>
+          </div>
+
           <div className="relative">
             <Search className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
             <input
@@ -330,49 +416,82 @@ export default function InfectoApp() {
             )}
           </div>
           <div className="mt-2 text-xs text-gray-500">
-            {t('found')} {filteredDiseases.length}
+            {t('found')} {activeTab === 'diseases' ? filteredDiseases.length : filteredGuidelines.length}
           </div>
         </div>
 
-        {/* GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredDiseases.map(disease => (
-            <div
-              key={disease.id}
-              onClick={() => setSelectedDisease(disease)}
-              className={`cursor-pointer bg-white rounded-xl border-l-4 shadow-sm hover:shadow-md transition-all p-4 flex flex-col gap-3 ${disease.color ? disease.color.replace('bg-', 'border-').split(' ')[1] : 'border-gray-300'}`}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-xs font-bold uppercase text-gray-500 tracking-wider">
-                    {getVal(disease.category)}
-                  </span>
-                  <h3 className="text-lg font-bold leading-tight mt-1">
-                    {getVal(disease.title)}
-                  </h3>
+        {/* CONTENT: DISEASES */}
+        {activeTab === 'diseases' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredDiseases.map(disease => (
+                <div
+                key={disease.id}
+                onClick={() => setSelectedDisease(disease)}
+                className={`cursor-pointer bg-white rounded-xl border-l-4 shadow-sm hover:shadow-md transition-all p-4 flex flex-col gap-3 ${disease.color ? disease.color.replace('bg-', 'border-').split(' ')[1] : 'border-gray-300'}`}
+                >
+                <div className="flex justify-between items-start">
+                    <div>
+                    <span className="text-xs font-bold uppercase text-gray-500 tracking-wider">
+                        {getVal(disease.category)}
+                    </span>
+                    <h3 className="text-lg font-bold leading-tight mt-1">
+                        {getVal(disease.title)}
+                    </h3>
+                    </div>
+                    <Info className="text-indigo-400 w-5 h-5 opacity-50" />
                 </div>
-                <Info className="text-indigo-400 w-5 h-5 opacity-50" />
-              </div>
 
-              <div className="bg-red-50 p-2 rounded border border-red-100 text-xs text-gray-700 line-clamp-3">
-                <div className="flex items-center gap-1 text-red-700 font-bold mb-1">
-                  <AlertTriangle className="w-3 h-3" /> {t('red_flags')}
+                <div className="bg-red-50 p-2 rounded border border-red-100 text-xs text-gray-700 line-clamp-3">
+                    <div className="flex items-center gap-1 text-red-700 font-bold mb-1">
+                    <AlertTriangle className="w-3 h-3" /> {t('red_flags')}
+                    </div>
+                    {getVal(disease.redFlags)}
                 </div>
-                {getVal(disease.redFlags)}
-              </div>
 
-              <div className="flex flex-wrap gap-1 mt-auto">
-                {getArr(disease.symptoms).slice(0,3).map((s,i) => (
-                  <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                    {s}
-                  </span>
-                ))}
-              </div>
+                <div className="flex flex-wrap gap-1 mt-auto">
+                    {getArr(disease.symptoms).slice(0,3).map((s,i) => (
+                    <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                        {s}
+                    </span>
+                    ))}
+                </div>
+                </div>
+            ))}
             </div>
-          ))}
-        </div>
+        )}
 
-        {/* MODAL: DETAILS */}
+        {/* CONTENT: GUIDELINES */}
+        {activeTab === 'guidelines' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredGuidelines.map(guide => (
+                  <div
+                    key={guide.id}
+                    onClick={() => setSelectedGuideline(guide)}
+                    className="cursor-pointer bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all p-5 flex flex-col gap-4"
+                  >
+                     <div className="flex justify-between items-start">
+                        <div>
+                            <span className="text-xs font-bold uppercase text-blue-600 tracking-wider bg-blue-50 px-2 py-1 rounded">
+                                {getVal(guide.category)}
+                            </span>
+                            <h3 className="text-lg font-bold leading-tight mt-3 text-gray-800">
+                                {getVal(guide.title)}
+                            </h3>
+                        </div>
+                        <FileText className="text-gray-400 w-6 h-6" />
+                     </div>
+                     <p className="text-sm text-gray-600 line-clamp-3">
+                        {getVal(guide.summary)}
+                     </p>
+                     <div className="mt-auto pt-2 border-t border-gray-100 text-xs text-gray-400 flex justify-between">
+                        <span>{guide.source}</span>
+                     </div>
+                  </div>
+              ))}
+            </div>
+        )}
+
+        {/* MODAL: DISEASE DETAILS */}
         {selectedDisease && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto" onClick={() => setSelectedDisease(null)}>
             <div className="bg-white rounded-xl w-full max-w-4xl shadow-2xl relative my-auto" onClick={e => e.stopPropagation()}>
@@ -442,6 +561,47 @@ export default function InfectoApp() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* MODAL: GUIDELINE DETAILS */}
+        {selectedGuideline && (
+             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto" onClick={() => setSelectedGuideline(null)}>
+                <div className="bg-white rounded-xl w-full max-w-3xl shadow-2xl relative my-auto h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                    <div className="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50 rounded-t-xl">
+                        <div>
+                            <span className="text-xs font-bold uppercase text-blue-600 tracking-wider bg-blue-100 px-2 py-1 rounded">
+                                {getVal(selectedGuideline.category)}
+                            </span>
+                            <h2 className="text-2xl font-bold text-gray-900 mt-2">
+                                {getVal(selectedGuideline.title)}
+                            </h2>
+                             <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
+                                <span className="font-medium">{t('source')}: {selectedGuideline.source}</span>
+                             </div>
+                        </div>
+                        <div className="flex gap-2">
+                             <button onClick={() => handleDelete(selectedGuideline.id, 'guideline')} className="p-2 bg-white/50 rounded-full hover:bg-red-100 text-red-500">
+                                <Trash2 className="w-5 h-5" />
+                            </button>
+                            <button onClick={() => setSelectedGuideline(null)} className="p-2 bg-white/50 rounded-full hover:bg-white text-gray-700">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="p-8 overflow-y-auto flex-1 text-gray-800 leading-relaxed whitespace-pre-line text-lg">
+                        {getVal(selectedGuideline.content)}
+                    </div>
+
+                    <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl flex justify-between items-center">
+                         {selectedGuideline.pdfUrl && (
+                             <a href={selectedGuideline.pdfUrl} target="_blank" className="flex items-center gap-2 text-indigo-600 font-bold hover:underline">
+                                <Download className="w-4 h-4" /> {t('open_pdf')}
+                             </a>
+                         )}
+                    </div>
+                </div>
+             </div>
         )}
 
         {/* MODAL: TEST */}
@@ -595,7 +755,7 @@ export default function InfectoApp() {
                 className="w-full h-64 p-3 border rounded-lg font-mono text-xs bg-gray-50 focus:ring-2 focus:ring-indigo-500 outline-none"
                 value={jsonInput}
                 onChange={e => setJsonInput(e.target.value)}
-                placeholder='{ "id": "test", "title": { "lv": "Test", "en": "Test" } ... }'
+                placeholder='{ "id": "test", "type": "guideline", "title": ... }'
               />
               <div className="flex justify-end gap-3 mt-4">
                 <button onClick={() => setIsImportOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
