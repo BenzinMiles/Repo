@@ -1,0 +1,25 @@
+{
+  "id": "disease_meningitis",
+  "type": "disease",
+  "title": { "en": "Meningitis", "ru": "Менингит", "lv": "Meningīts" },
+  "redFlags": {
+    "en": ["Altered mental status", "Seizures", "Focal neurological deficits"],
+    "ru": ["Нарушение сознания", "Судороги", "Очаговая неврологическая симптоматика"],
+    "lv": ["Apziņas traucējumi", "Krampji", "Fokāla neiroloģiska simptomātika"]
+  },
+  "etiology": {
+    "en": "Viral (Enterovirus, HSV), Bacterial (S. pneumoniae, N. meningitidis)",
+    "ru": "Вирусный (Энтеровирус, ВПГ), Бактериальный (S. pneumoniae, N. meningitidis)",
+    "lv": "Vīrusu (Enterovīruss, HSV), Bakteriāls (S. pneumoniae, N. meningitidis)"
+  },
+  "diagnostics": {
+    "en": "Lumbar puncture: cell count, protein, glucose, culture. Blood culture.",
+    "ru": "Люмбальная пункция: цитоз, белок, глюкоза, посев. Посев крови.",
+    "lv": "Lumbālā punkcija: šūnu skaits, olbaltums, glikoze, uzsējums. Asins uzsējums."
+  },
+  "treatment": {
+    "en": "Empiric antibiotics: Ceftriaxone + Vancomycin (+ Ampicillin if >50y). Dexamethasone.",
+    "ru": "Эмпирическая АБТ: Цефтриаксон + Ванкомицин (+ Ампициллин если >50лет). Дексаметазон.",
+    "lv": "Empīriskā ABT: Ceftriaxone + Vancomycin (+ Ampicillin ja >50g). Dexamethasone."
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "id": "ped_vaccine_schedule",
+  "type": "pediatric",
+  "category": "vaccination",
+  "title": { "en": "Vaccination Calendar", "ru": "Календарь прививок", "lv": "Vakcinācijas kalendārs" },
+  "data_type": "list",
+  "items": [
+    {
+      "age": { "en": "Birth", "ru": "Рождение", "lv": "Dzimšana" },
+      "value": { "en": "Hep B, BCG", "ru": "Гепатит В, БЦЖ", "lv": "B hepatīts, BCG" }
+    },
+    {
+      "age": { "en": "2 months", "ru": "2 месяца", "lv": "2 mēneši" },
+      "value": { "en": "Rotavirus, Pneumococcus, DTaP", "ru": "Ротавирус, Пневмококк, АКДС", "lv": "Rotavīruss, Pneimokoks, Kombinētā" }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "med_ceftriaxone",
+  "type": "med",
+  "title": { "en": "Ceftriaxone", "ru": "Цефтриаксон", "lv": "Ceftriaxone" },
+  "group": { "en": "Antibiotic (Cephalosporin III)", "ru": "Антибиотик (Цефалоспорин III)", "lv": "Antibiotika (III paaudzes cefalosporīns)" },
+  "indications": {
+    "en": ["Meningitis", "Pneumonia", "Lyme disease"],
+    "ru": ["Менингит", "Пневмония", "Болезнь Лайма"],
+    "lv": ["Meningīts", "Pneimonija", "Laimas slimība"]
+  },
+  "contraindications": {
+    "en": ["Allergy to cephalosporins", "Neonates with hyperbilirubinemia"],
+    "ru": ["Аллергия на цефалоспорины", "Новорожденные с желтухой"],
+    "lv": ["Alerģija pret cefalosporīniem", "Jaundzimušie ar hiperbilirubinēmiju"]
+  },
+  "dosing": {
+    "adults": {
+      "en": "1-2 g IV/IM every 24h. Meningitis: 2g q12h.",
+      "ru": "1-2 г в/в или в/м раз в 24ч. Менингит: 2г каждые 12ч.",
+      "lv": "1-2 g i/v vai i/m ik pēc 24h. Meningīts: 2g ik pēc 12h."
+    },
+    "pediatric": {
+      "en": "50-75 mg/kg/day. Meningitis: 100 mg/kg/day.",
+      "ru": "50-75 мг/кг/сут. Менингит: 100 мг/кг/сут.",
+      "lv": "50-75 mg/kg/dienā. Meningīts: 100 mg/kg/dienā."
+    }
+  }
+}
