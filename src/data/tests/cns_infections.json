@@ -1,0 +1,25 @@
+{
+  "id": "quiz_cns_infections",
+  "type": "quiz",
+  "title": { "en": "CNS Infections Quiz", "ru": "Тест: Инфекции ЦНС", "lv": "Tests: CNS infekcijas" },
+  "questions": [
+    {
+      "question": {
+        "en": "Drug of choice for Lyme Neuroborreliosis?",
+        "ru": "Препарат выбора при нейроборрелиозе?",
+        "lv": "Pirmās izvēles medikaments neiroboreliozei?"
+      },
+      "options": [
+        { "en": "Doxycycline", "ru": "Доксициклин", "lv": "Doksiciklīns" },
+        { "en": "Ceftriaxone", "ru": "Цефтриаксон", "lv": "Ceftriaxone" },
+        { "en": "Penicillin", "ru": "Пенициллин", "lv": "Penicilīns" }
+      ],
+      "correctIndex": 1,
+      "explanation": {
+        "en": "IV Ceftriaxone penetrates BBB best.",
+        "ru": "Цефтриаксон в/в лучше всего проникает через ГЭБ.",
+        "lv": "Ceftriaxone i/v vislabāk šķērso GHE barjeru."
+      }
+    }
+  ]
+}
