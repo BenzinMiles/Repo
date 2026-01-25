@@ -1,4 +1,4 @@
-package com.infecto.shell;
+package com.dietholesteric.app;
 
 import com.getcapacitor.BridgeActivity;
 
