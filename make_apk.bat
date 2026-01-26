@@ -22,11 +22,11 @@ if not exist "node_modules" (
 )
 
 REM 3. Генерация данных
-if exist "generate_data.js" (
+if exist "generate_data.cjs" (
     echo [DATA] Генерируем рецепты и планы (JSON)...
-    call node generate_data.js
+    call node generate_data.cjs
 ) else (
-    echo [WARNING] Файл generate_data.js не найден!
+    echo [WARNING] Файл generate_data.cjs не найден!
     pause
     exit /b
 )
