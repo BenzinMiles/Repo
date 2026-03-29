@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">InfectoShell</string>
-    <string name="title_activity_main">InfectoShell</string>
-    <string name="package_name">com.infecto.shell</string>
-    <string name="custom_url_scheme">com.infecto.shell</string>
+    <string name="app_name">DietHolesteric</string>
+    <string name="title_activity_main">DietHolesteric</string>
+    <string name="package_name">com.dietholesteric.app</string>
+    <string name="custom_url_scheme">com.dietholesteric.app</string>
 </resources>
