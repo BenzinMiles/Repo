@@ -1,0 +1,3 @@
+@echo off
+echo Starting DietHolesteric Android Project...
+start "" "D:\Android Studio\bin\studio64.exe" "%~dp0android-app"
